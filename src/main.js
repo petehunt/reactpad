@@ -1,15 +1,10 @@
 var Parse = require('parse').Parse;
 
-var AboutPage = require('./pages/AboutPage');
-var ContentPage = require('./pages/ContentPage');
-var HomePage = require('./pages/HomePage');
+var EditorPage = require('./pages/EditorPage');
 var ReactHack = require('ReactHack');
 
-Parse.initialize('APPLICATION_ID', 'JAVASCRIPT_KEY');
+Parse.initialize('wy9uD7HHxqkhudWDlCeGJnWPQcUysZd7qOj2ruze', 'OtMLPV7ZJ2tdRwsGxU596eEoC99Mx8t9HyKw3KGK');
 
 ReactHack.start({
-  '': HomePage,
-  'pages/:name': ContentPage,
-  'pages/:name/:mode': ContentPage,
-  'about': AboutPage
+  ':component': EditorPage,
 });

@@ -17,7 +17,6 @@ var NavBar = React.createClass({
             <div className="nav-collapse collapse">
               <ul className="nav">
                 <li className={this.props.active === 'home' && 'active'}><a href="#">Home</a></li>
-                <li className={this.props.active === 'about' && 'active'}><a href="#about">About</a></li>
               </ul>
             </div>
           </div>
