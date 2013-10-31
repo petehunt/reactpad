@@ -10,7 +10,7 @@ var Layout = React.createClass({
   render: function() {
     return this.transferPropsTo(
       <div>
-        <NavBar active={this.props.active} />
+        <NavBar active={this.props.active} project={this.props.project} />
         <div className="container">
           <div className="content">
             {this.props.children}

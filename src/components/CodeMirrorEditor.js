@@ -5,14 +5,13 @@ var React = require('React');
 var CodeMirrorEditor = React.createClass({
   componentDidMount: function(root) {
     this.editor = CodeMirror.fromTextArea(this.refs.editor.getDOMNode(), {
-      mode: 'javascript',
+      mode: this.props.mode,
       lineNumbers: false,
       matchBrackets: true,
       theme: 'solarized-light'
     });
     this.editor.setSize(this.props.width, this.props.height);
     this.editor.on('change', this.onChange);
-    this.onChange();
   },
   onChange: function() {
     if (this.props.onChange) {

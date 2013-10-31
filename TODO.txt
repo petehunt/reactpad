@@ -1,0 +1,6 @@
+- Rename react component -> renames all callers
+- Linkable React component names in codemirror
+- "Save a version" per component
+- Mangle CSS (or warn if not namespaced correctly)
+- Ensure React components are named correctly (var)
+- Support requirebin-esque functionality
