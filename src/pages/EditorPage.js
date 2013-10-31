@@ -8,12 +8,12 @@ var CodeMirrorEditor = require('../components/CodeMirrorEditor');
 var Layout = require('../layout/Layout');
 var Project = require('../data/Project');
 
-var PROJECT = Project.get('singleton'); // TODO: support multiple projects
-
 var EditorPage = React.createClass({
   getInitialState: function() {
+    this.project = Project.get('singleton'); // TODO: support multiple projects
+
     var componentName = this.props.routeParams[0];
-    var component = PROJECT.components[componentName];
+    var component = this.project.components[componentName];
 
     return {
       js: component.js,
@@ -50,8 +50,12 @@ var EditorPage = React.createClass({
     doc.body.appendChild(this.contentDiv);
 
     this.messageDiv = doc.createElement('div');
+    this.messageDiv.id = '__reactpad_message';
     this.messageDiv.style.display = 'none';
     this.messageDiv.style.border = '1px solid red';
+    this.messageDiv.style.margin = '10px';
+    this.messageDiv.style.padding = '10px';
+    this.messageDiv.style.textAlign = 'center';
     doc.body.appendChild(this.messageDiv);
 
     setTimeout(this.execute, 1000);
@@ -60,18 +64,19 @@ var EditorPage = React.createClass({
   execute: function() {
     try {
       var transformedSrc = JSXTransformer.transform(
-        '/** @jsx React.DOM */var examples = [];' +
+        '/** @jsx React.DOM */var examples = [];var messageDiv = document.getElementById("__reactpad_message");' +
+        'try {\n' +
         this.state.js + '\n' +
         this.state.example + '\n' +
-        'var contentDiv = document.getElementById("__reactpad_content");\n' +
-        'try {\n' +
+        '  var contentDiv = document.getElementById("__reactpad_content");\n' +
         '  examples.forEach(function(e) {\n' +
         '    var c = document.createElement("div");\n' +
         '    contentDiv.appendChild(c);\n' +
         '    React.renderComponent(e, c);\n' +
         '  });' +
         '} catch (e) {' +
-        '  document.body.innerText = e.toString();\n' +
+        '  messageDiv.innerText = e.toString();\n' +
+        '  messageDiv.style.display = "block";\n' +
         '}\n'
       ).code;
     } catch (e) {
@@ -106,7 +111,7 @@ var EditorPage = React.createClass({
     var componentName = this.props.routeParams[0];
 
     return (
-      <Layout active={componentName} project={PROJECT}>
+      <Layout active={componentName} project={this.project}>
         <div className="row">
           <div className="span6">
             <h4>CSS</h4>

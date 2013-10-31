@@ -7,7 +7,7 @@ var NavBar = React.createClass({
     var items = Object.keys(this.props.project.components).map(function(name) {
       return (
         <li className={this.props.active === name && 'active'} key={name}>
-          <a href="#">{name}</a>
+          <a href={'#' + name}>{name}</a>
         </li>
       );
     }, this);
@@ -23,7 +23,7 @@ var NavBar = React.createClass({
             <a className="brand" href="#">ReactHack</a>
             <div className="nav-collapse collapse">
               <ul className="nav">
-                <li><a href="#">Add new component</a></li>
+                <li><a href="#__new">Add new component</a></li>
                 {items}
               </ul>
             </div>
