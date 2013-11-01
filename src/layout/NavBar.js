@@ -4,13 +4,6 @@ var React = require('React');
 
 var NavBar = React.createClass({
   render: function() {
-    var items = Object.keys(this.props.project.components).map(function(name) {
-      return (
-        <li className={this.props.active === name && 'active'} key={name}>
-          <a href={'#' + name}>{name}</a>
-        </li>
-      );
-    }, this);
     return this.transferPropsTo(
       <div className="navbar navbar-inverse navbar-fixed-top">
         <div className="navbar-inner">
@@ -20,13 +13,7 @@ var NavBar = React.createClass({
               <span className="icon-bar"></span>
               <span className="icon-bar"></span>
             </button>
-            <a className="brand" href="#">ReactHack</a>
-            <div className="nav-collapse collapse">
-              <ul className="nav">
-                <li><a href="#__new">Add new component</a></li>
-                {items}
-              </ul>
-            </div>
+            <a className="brand" href="#">ReactPad</a>
           </div>
         </div>
       </div>

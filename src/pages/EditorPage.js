@@ -5,6 +5,7 @@ var ReactHack = require('ReactHack');
 
 var Button = require('../components/Button');
 var CodeMirrorEditor = require('../components/CodeMirrorEditor');
+var ComponentPicker = require('../components/ComponentPicker');
 var Layout = require('../layout/Layout');
 var Project = require('../data/Project');
 
@@ -111,43 +112,50 @@ var EditorPage = React.createClass({
     var componentName = this.props.routeParams[0];
 
     return (
-      <Layout active={componentName} project={this.project}>
+      <Layout>
         <div className="row">
-          <div className="span6">
-            <h4>CSS</h4>
-            <CodeMirrorEditor
-              width="100%"
-              height="100px"
-              mode="css"
-              codeText={this.state.css}
-              onChange={this.handleCSSChange}
-            />
+          <div className="span2">
+            <ComponentPicker project={this.project} current={componentName} />
           </div>
-          <div className="span6">
-            <h4>Example code</h4>
-            <CodeMirrorEditor
-              width="100%"
-              height="100px"
-              mode="javascript"
-              codeText={this.state.example}
-              onChange={this.handleExampleChange}
-            />
-          </div>
-        </div>
-        <div className="row">
-          <div className="span6">
-            <h4>JavaScript</h4>
-            <CodeMirrorEditor
-              width="100%"
-              height="300px"
-              mode="javascript"
-              codeText={this.state.js}
-              onChange={this.handleJSChange}
-            />
-          </div>
-          <div className="span6">
-            <h4>Preview</h4>
-            <iframe ref="preview" style={{width: '100%', height: 300}} frameBorder="0" />
+          <div className="span10">
+            <div className="row">
+              <div className="span5">
+                <h4>CSS</h4>
+                <CodeMirrorEditor
+                  width="100%"
+                  height="100px"
+                  mode="css"
+                  codeText={this.state.css}
+                  onChange={this.handleCSSChange}
+                />
+              </div>
+              <div className="span5">
+                <h4>Example code</h4>
+                <CodeMirrorEditor
+                  width="100%"
+                  height="100px"
+                  mode="javascript"
+                  codeText={this.state.example}
+                  onChange={this.handleExampleChange}
+                />
+              </div>
+            </div>
+            <div className="row">
+              <div className="span5">
+                <h4>JavaScript</h4>
+                <CodeMirrorEditor
+                  width="100%"
+                  height="300px"
+                  mode="javascript"
+                  codeText={this.state.js}
+                  onChange={this.handleJSChange}
+                />
+              </div>
+              <div className="span5">
+                <h4>Preview</h4>
+                <iframe ref="preview" style={{width: '100%', height: 300}} frameBorder="0" />
+              </div>
+            </div>
           </div>
         </div>
       </Layout>
