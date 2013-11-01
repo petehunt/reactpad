@@ -12,6 +12,7 @@ var Project = require('../data/Project');
 var EditorPage = React.createClass({
   getInitialState: function() {
     this.project = Project.get('singleton'); // TODO: support multiple projects
+    this.project
 
     var componentName = this.props.routeParams[0];
     var component = this.project.components[componentName];
@@ -19,7 +20,8 @@ var EditorPage = React.createClass({
     return {
       js: component.js,
       css: component.css,
-      example: component.example
+      example: component.example,
+      lastSaved: new Date()
     };
   },
 
@@ -112,7 +114,7 @@ var EditorPage = React.createClass({
     var componentName = this.props.routeParams[0];
 
     return (
-      <Layout>
+      <Layout lastSaved={this.state.lastSaved}>
         <div className="row">
           <div className="span2">
             <ComponentPicker project={this.project} current={componentName} />

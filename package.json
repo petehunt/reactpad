@@ -1,13 +1,14 @@
 {
-  "name": "ReactHack",
-  "version": "0.0.2",
-  "description": "Get started with building React apps",
+  "name": "ReactPad",
+  "version": "0.0.1",
+  "description": "hack on hack",
   "repository": "",
   "dependencies": {
     "parse": "petehunt/parsesdk-isomorphic",
     "React": "petehunt/react-core",
     "ReactHack": "petehunt/reacthack-core",
-    "showdown": "petehunt/showdown"
+    "showdown": "petehunt/showdown",
+    "moment": "~2.4.0"
   },
   "devDependencies": {
     "jsx-loader": "petehunt/jsx-loader",
