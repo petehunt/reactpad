@@ -9,10 +9,13 @@ var ComponentPicker = require('../components/ComponentPicker');
 var Layout = require('../layout/Layout');
 var Project = require('../data/Project');
 
+var UPDATE_INTERVAL = 2000;
+
 var EditorPage = React.createClass({
   getInitialState: function() {
     this.project = Project.get('singleton'); // TODO: support multiple projects
-    this.project
+    this.project.autosave(this.handleAutosave);
+    this.interval = window.setInterval(this.handleUpdate, UPDATE_INTERVAL);
 
     var componentName = this.props.routeParams[0];
     var component = this.project.components[componentName];
@@ -23,6 +26,24 @@ var EditorPage = React.createClass({
       example: component.example,
       lastSaved: new Date()
     };
+  },
+
+  componentWillUnmount: function() {
+    clearInterval(this.interval);
+    this.project.unautosave(this.handleAutosave);
+  },
+
+  handleUpdate: function() {
+    this.project.updateComponent(
+      this.props.routeParams[0],
+      this.state.js,
+      this.state.css,
+      this.state.example
+    );
+  },
+
+  handleAutosave: function() {
+    this.setState({lastSaved: new Date()});
   },
 
   handleCSSChange: function(css) {
