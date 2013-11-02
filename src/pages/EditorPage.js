@@ -112,7 +112,6 @@ var EditorPage = React.createClass({
       setTimeout(this.execute, 100);
       return;
     }
-
     try {
       var transformedSrc = JSXTransformer.transform(
         '/** @jsx React.DOM */ var examples = [];var messageDiv = document.getElementById("__reactpad_message");' +
