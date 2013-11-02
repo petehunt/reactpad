@@ -3,8 +3,13 @@
 var React = require('React');
 
 var ComponentPicker = React.createClass({
+  handleAdd: function() {
+    var newName = window.prompt('Name your component (a valid JS identifier)');
+    this.props.onNew(newName);
+  },
+
   render: function() {
-    var children = Object.keys(this.props.project.components).map(function(name) {
+    var children = Object.keys(this.props.components).map(function(name) {
       return (
         <li className={name === this.props.current ? 'active' : ''}>
           <a href={'#' + name}>{name}</a>
@@ -22,7 +27,11 @@ var ComponentPicker = React.createClass({
       <ul className="nav nav-list">
         {children}
         {divider}
-        <li><a href="#__new">Add a new component...</a></li>
+        <li>
+          <a href={'#' + this.props.current} onClick={this.handleAdd}>
+            Add a new component...
+          </a>
+        </li>
       </ul>
     );
   }

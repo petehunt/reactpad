@@ -13,12 +13,26 @@ var CodeMirrorEditor = React.createClass({
     this.editor.setSize(this.props.width, this.props.height);
     this.editor.on('change', this.onChange);
   },
+
+  componentDidUpdate: function(prevProps) {
+    if (this.editor.getValue() !== this.props.codeText) {
+      this.editor.setValue(this.props.codeText);
+    }
+
+    if (this.props.width !== prevProps.width || this.props.height !== prevProps.height) {
+      this.editor.setSize(this.props.width, this.props.height);
+    }
+  },
+
   onChange: function() {
     if (this.props.onChange) {
       var content = this.editor.getValue();
-      this.props.onChange(content);
+      if (content !== this.props.codeText) {
+        this.props.onChange(content);
+      }
     }
   },
+
   render: function() {
     // wrap in a div to fully contain CodeMirror
     return this.transferPropsTo(

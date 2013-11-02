@@ -9,23 +9,27 @@ var ComponentPicker = require('../components/ComponentPicker');
 var Layout = require('../layout/Layout');
 var Project = require('../data/Project');
 
-var UPDATE_INTERVAL = 2000;
+var UPDATE_INTERVAL = 1000;
 
 var EditorPage = React.createClass({
-  getInitialState: function() {
-    this.project = Project.get('singleton'); // TODO: support multiple projects
-    this.project.autosave(this.handleAutosave);
-    this.interval = window.setInterval(this.handleUpdate, UPDATE_INTERVAL);
-
-    var componentName = this.props.routeParams[0];
+  getStateForName: function(componentName) {
     var component = this.project.components[componentName];
 
     return {
       js: component.js,
       css: component.css,
       example: component.example,
+      components: this.project.components,
       lastSaved: new Date()
     };
+  },
+
+  getInitialState: function() {
+    this.project = Project.get('singleton'); // TODO: support multiple projects
+    this.project.autosave(this.handleAutosave);
+    this.interval = window.setInterval(this.handleUpdate, UPDATE_INTERVAL);
+
+    return this.getStateForName(this.props.routeParams[0]);
   },
 
   componentWillUnmount: function() {
@@ -40,6 +44,12 @@ var EditorPage = React.createClass({
       this.state.css,
       this.state.example
     );
+  },
+
+  handleNew: function(name) {
+    this.project.createComponent(name);
+    this.setState({components: this.project.components});
+    window.location.hash = '#' + name;
   },
 
   handleAutosave: function() {
@@ -58,8 +68,20 @@ var EditorPage = React.createClass({
     this.setState({example: example});
   },
 
-  componentDidUpdate: function() {
-    this.execute();
+  componentWillReceiveProps: function(nextProps, nextState) {
+    if (this.props.routeParams[0] !== nextProps.routeParams[0]) {
+      console.log('updating', nextProps.routeParams[0]);
+      this.setState(this.getStateForName(nextProps.routeParams[0]));
+    }
+  },
+
+  componentDidUpdate: function(prevProps, prevState) {
+    if (
+        this.state.js !== prevState.js ||
+        this.state.example !== prevState.example ||
+        this.state.css !== prevState.css) {
+      this.execute();
+    }
   },
 
   componentDidMount: function() {
@@ -82,13 +104,17 @@ var EditorPage = React.createClass({
     this.messageDiv.style.textAlign = 'center';
     doc.body.appendChild(this.messageDiv);
 
-    setTimeout(this.execute, 1000);
+    this.execute();
   },
 
   execute: function() {
+    if (!this.refs.preview.getDOMNode().contentWindow.React) {
+      setTimeout(this.execute, 100);
+      return;
+    }
     try {
       var transformedSrc = JSXTransformer.transform(
-        '/** @jsx React.DOM */var examples = [];var messageDiv = document.getElementById("__reactpad_message");' +
+        '/** @jsx React.DOM */ var examples = [];var messageDiv = document.getElementById("__reactpad_message");' +
         'try {\n' +
         this.state.js + '\n' +
         this.state.example + '\n' +
@@ -138,7 +164,7 @@ var EditorPage = React.createClass({
       <Layout lastSaved={this.state.lastSaved}>
         <div className="row">
           <div className="span2">
-            <ComponentPicker project={this.project} current={componentName} />
+            <ComponentPicker components={this.state.components} current={componentName} onNew={this.handleNew} />
           </div>
           <div className="span10">
             <div className="row">

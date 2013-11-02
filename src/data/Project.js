@@ -1,13 +1,17 @@
-var SAVE_INTERVAL = 5000;
+var SAVE_INTERVAL = 2000;
+
+function getComponentTemplate(name) {
+  return {
+    js: 'var Main = React.createClass({\n  render: function() {\n    return <div className="Main">Hello world</div>;\n  }\n});'.replace(/Main/g, name),
+    css: '.Main {\n  color: blue;\n}'.replace('Main', name),
+    example: 'examples.push(<Main />);'.replace('Main', name)
+  };
+}
 
 var Project = function(name, components) {
   this.name = name;
   this.components = components || {
-    Main: {
-      js: 'var Home = React.createClass({\n  render: function() {\n    return <div className="Home">Hello world</div>;\n  }\n});',
-      css: '.Home {\n  color: blue;\n}',
-      example: 'examples.push(<Home />);'
-    }
+    Main: getComponentTemplate('Main')
   };
   this.autosaveCallbacks = [];
   window.setInterval(this.save.bind(this), SAVE_INTERVAL);
@@ -27,7 +31,7 @@ Project.prototype.unautosave = function(cb) {
 
 
 Project.prototype.createComponent = function(name) {
-  this.components[name] = {};
+  this.components[name] = getComponentTemplate(name);
 };
 
 Project.prototype.updateComponent = function(name, js, css, example) {
