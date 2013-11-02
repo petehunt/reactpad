@@ -43,6 +43,18 @@ Project.prototype.save = function() {
   this.autosaveCallbacks.forEach(function(cb) { cb(); });
 };
 
+Project.prototype.getSources = function(componentName) {
+  return Object.keys(this.components).map(function(name) {
+    var component = this.components[name];
+    return {
+      name: name,
+      js: JSXTransformer.transform('/** @jsx React.DOM */ ' + component.js),
+      css: component.css
+      example: name === componentName ? component.example : null
+    };
+  }, this);
+};
+
 Project.get = function(name) {
   var json = window.localStorage.getItem('project_' + name);
   return new Project(name, JSON.parse(json));
