@@ -45,13 +45,11 @@ function GraphNodeSpec(type) {
   this.type = type;
 }
 
-function GraphEdgeSpec(label, fromType, toType, bidirectional, inverseLabel, unique) {
+function GraphEdgeSpec(label, fromType, toType, inverseLabel) {
   this.label = label;
   this.fromType = fromType;
   this.toType = toType;
-  this.bidirectional = bidirectional;
   this.inverseLabel = inverseLabel;
-  this.unique = unique;
 }
 
 function Graph(nodeSpecs, edgeSpecs, nodes, edges) {
@@ -61,18 +59,85 @@ function Graph(nodeSpecs, edgeSpecs, nodes, edges) {
   this.edges = edges || {}; // label -> fromKey -> ordered (toKey -> GraphEdge)
 }
 
-// Mutators
+// Accessors
 
-Graph.prototype.addNode = function(type, key, content) {
-  invariant(!this.nodes[key], 'Node with key %s already exists!', key);
+Graph.prototype.getNode = function(type, key) {
+  var node = this.nodes[key];
+  invariant(node, 'getNode(): Node with key %s does not exist', key);
+  invariant(node.type === type, 'getNode(): Node with key %s has type %s; wanted %s', key, node.type, type);
 
-  var node = new GraphNode(type, key, content);
-  this.nodes[key] = node;
   return node;
 };
 
-Graph.prototype.removeNode = function(key) {
-  invariant(this.nodes[key], 'Node with key %s does not exist!', key);
+Graph.prototype.getNodeOrNull = function() {
+  try {
+    return this.getNode.apply(this, arguments);
+  } catch (e) {
+    return null;
+  }
+};
+
+Graph.prototype.getEdge = function(label, fromKey, toKey) {
+  invariant(this.edgeSpec[label], 'getEdge(): edgeSpec %s does not exist', label);
+
+  var edgesOfType = this.edges[label];
+  invariant(edgesOfType, 'getEdge(): No edges with label %s', label);
+
+  var edgesOfTypeFromKey = edgesOfType[fromKey];
+  invariant(edgesOfTypeFromKey, 'getEdge(): No edges of label %s from %s', label, fromKey);
+
+  var edge = edgesOfTypeFromKey[toKey];
+  invariant(edge, 'getEdge(): No edge of label %s from %s to %s', label, fromKey, toKey);
+  return edge;
+};
+
+Graph.prototype.getEdgeOrNull = function() {
+  try {
+    return this.getEdge.apply(this, arguments);
+  } catch (e) {
+    return null;
+  }
+};
+
+Graph.prototype.getEdgesByLabel = function(label, fromKey) {
+  invariant(this.edgeSpec[label], 'getEdge(): edgeSpec %s does not exist', label);
+
+  var edgesOfType = this.edges[label] || {};
+  return edgesOfType[fromKey] || {};
+};
+
+// Mutators
+
+Graph.prototype.addNode = function(type, key, content) {
+  invariant(!this.nodes[key], 'addNode(): Node with key %s already exists', key);
+  invariant(this.nodeSpecs[type], 'addNode() nodeSpec %s does not exist', type);
+
+  var node = new GraphNode(type, key, content);
+  this.nodes[key] = node;
+
+  return node;
+};
+
+Graph.prototype.updateNode = function(type, key, content) {
+  var node = this.nodes[key];
+  invariant(node, 'updateNode(): Node with key %s does not exist', key);
+  invariant(node.type === type, 'updateNode(): Node with key %s has type %s; wanted %s', key, node.type, type);
+
+  node.content = content;
+};
+
+Graph.prototype.addOrUpdateNode = function(type, key, content) {
+  var node = this.nodes[key];
+  if (!node) {
+    this.addNode(type, key, content);
+  } else {
+    this.updateNode(type, key, content);
+  }
+};
+
+Graph.prototype.removeNode = function(type, key) {
+  // For the invariants
+  this.getNode(type, key);
   delete this.nodes[key];
 
   // Delete edges (both directions) from this node
@@ -96,20 +161,35 @@ Graph.prototype.removeNode = function(key) {
 Graph.prototype.addEdge = function(label, fromKey, toKey, data, order) {
   var spec = this.edgeSpecs[label];
 
-  invariant(spec, 'Could not find edge spec for %s', label);
+  invariant(spec, 'addEdge(): Could not find edge spec for %s', label);
   invariant(
     !this.getEdge(label, fromKey, toKey),
-    'Edge of label %s between %s and %s exists', label, fromKey, toKey
+    'addEdge(): Edge of label %s between %s and %s exists', label, fromKey, toKey
   );
   invariant(
     !spec.inverseLabel || (!this.getEdge(spec.inverseLabel, toKey, fromKey)),
-    'Inverse edge of label %s between %s and %s exists', spec.inverseLabel, toKey, fromKey
+    'addEdge(): Inverse edge of label %s between %s and %s exists', spec.inverseLabel, toKey, fromKey
   );
 
   this._insertEdge(new GraphEdge(label, fromKey, toKey, data, order));
   if (spec.inverseLabel) {
     this._insertEdge(new GraphEdge(spec.inverseLabel, toKey, fromKey, data, order));
   }
+};
+
+Graph.prototype.updateEdge = function(label, fromKey, toKey, data, order) {
+  this.removeEdge(label, fromKey, toKey);
+  this.addEdge(label, fromKey, toKey, data, order);
+};
+
+Graph.prototype.addOrUpdateEdge = function(label, fromKey, toKey, data, order) {
+  var edge = this.getEdge(label, fromKey, toKey);
+
+  if (edge) {
+    this.removeEdge(label, fromKey, toKey);
+  }
+
+  this.addEdge(label, fromKey, toKey, data, order);
 };
 
 Graph.prototype._insertEdge = function(edge) {
@@ -147,11 +227,11 @@ Graph.prototype._insertEdge = function(edge) {
 
 Graph.prototype._deleteEdge = function(label, fromKey, toKey) {
   var edgesOfType = this.edges[label];
-  invariant(edgesOfType, 'Could not find edge %s between %s and %s', label, fromKey, toKey);
+  invariant(edgesOfType, '_deleteEdge(): No edges of label %s', label);
 
   var edgesOfTypeFromKey = edgesOfType[fromKey];
-  invariant(edgesOfTypeFromKey, 'Could not find edge %s between %s and %s', label, fromKey, toKey);
-  invariant(edgesOfTypeFromKey[toKey], 'Could not find edge %s between %s and %s', label, fromKey, toKey);
+  invariant(edgesOfTypeFromKey, '_deleteEdge(): No edges of label %s from %s', label, fromKey);
+  invariant(edgesOfTypeFromKey[toKey], '_deleteEdge(): Could not find edge %s between %s and %s', label, fromKey, toKey);
 
   delete edgesOfTypeFromKey[toKey];
 };
@@ -159,7 +239,7 @@ Graph.prototype._deleteEdge = function(label, fromKey, toKey) {
 Graph.prototype.removeEdge = function(label, fromKey, toKey) {
   var spec = this.edgeSpecs[label];
 
-  invariant(spec, 'Could not find edge spec for %s', label);
+  invariant(spec, 'removeEdge(): Could not find edge spec for %s', label);
 
   this._deleteEdge(label, fromKey, toKey);
 
@@ -168,54 +248,7 @@ Graph.prototype.removeEdge = function(label, fromKey, toKey) {
   }
 };
 
-var SAVE_INTERVAL = 2000;
+Graph.NodeSpec = GraphNodeSpec;
+Graph.EdgeSpec = GraphEdgeSpec;
 
-function getComponentTemplate(name) {
-  return {
-    js: 'var Main = React.createClass({\n  render: function() {\n    return <div className="Main">Hello world</div>;\n  }\n});'.replace(/Main/g, name),
-    css: '.Main {\n  color: blue;\n}'.replace('Main', name),
-    example: 'examples.push(<Main />);'.replace('Main', name)
-  };
-}
-
-var Project = function(name, components) {
-  this.name = name;
-  this.components = components || {
-    Main: getComponentTemplate('Main')
-  };
-  this.autosaveCallbacks = [];
-  window.setInterval(this.save.bind(this), SAVE_INTERVAL);
-};
-
-Project.prototype.autosave = function(cb) {
-  this.autosaveCallbacks.push(cb);
-};
-
-Project.prototype.unautosave = function(cb) {
-  var i = this.autosaveCallbacks.indexOf(cb);
-  if (i === -1) {
-    return;
-  }
-  this.autosaveCallbacks.splice(i, 1);
-};
-
-
-Project.prototype.createComponent = function(name) {
-  this.components[name] = getComponentTemplate(name);
-};
-
-Project.prototype.updateComponent = function(name, js, css, example) {
-  this.components[name] = {js: js, css: css, example: example};
-};
-
-Project.prototype.save = function() {
-  window.localStorage.setItem('project_' + this.name, JSON.stringify(this.components));
-  this.autosaveCallbacks.forEach(function(cb) { cb(); });
-};
-
-Project.get = function(name) {
-  var json = window.localStorage.getItem('project_' + name);
-  return new Project(name, JSON.parse(json));
-};
-
-module.exports = Project;
+module.exports = Graph;
