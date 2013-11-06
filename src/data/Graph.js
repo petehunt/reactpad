@@ -69,16 +69,20 @@ Graph.prototype.getNode = function(type, key) {
   return node;
 };
 
-Graph.prototype.getNodeOrNull = function() {
-  try {
-    return this.getNode.apply(this, arguments);
-  } catch (e) {
+Graph.prototype.getNodeOrNull = function(type, key) {
+  var node = this.nodes[key];
+
+  if (!node) {
     return null;
   }
+
+  invariant(node.type === type, 'getNodeOrNull(): Node with key %s has type %s; wanted %s', key, node.type, type);
+
+  return node;
 };
 
 Graph.prototype.getEdge = function(label, fromKey, toKey) {
-  invariant(this.edgeSpec[label], 'getEdge(): edgeSpec %s does not exist', label);
+  invariant(this.edgeSpecs[label], 'getEdge(): edgeSpec %s does not exist', label);
 
   var edgesOfType = this.edges[label];
   invariant(edgesOfType, 'getEdge(): No edges with label %s', label);
@@ -100,7 +104,7 @@ Graph.prototype.getEdgeOrNull = function() {
 };
 
 Graph.prototype.getEdgesByLabel = function(label, fromKey) {
-  invariant(this.edgeSpec[label], 'getEdge(): edgeSpec %s does not exist', label);
+  invariant(this.edgeSpecs[label], 'getEdge(): edgeSpec %s does not exist', label);
 
   var edgesOfType = this.edges[label] || {};
   return edgesOfType[fromKey] || {};
@@ -110,7 +114,7 @@ Graph.prototype.getEdgesByLabel = function(label, fromKey) {
 
 Graph.prototype.addNode = function(type, key, content) {
   invariant(!this.nodes[key], 'addNode(): Node with key %s already exists', key);
-  invariant(this.nodeSpecs[type], 'addNode() nodeSpec %s does not exist', type);
+  invariant(this.nodeSpecs[type], 'addNode(): nodeSpec %s does not exist', type);
 
   var node = new GraphNode(type, key, content);
   this.nodes[key] = node;
@@ -124,6 +128,8 @@ Graph.prototype.updateNode = function(type, key, content) {
   invariant(node.type === type, 'updateNode(): Node with key %s has type %s; wanted %s', key, node.type, type);
 
   node.content = content;
+
+  return node;
 };
 
 Graph.prototype.addOrUpdateNode = function(type, key, content) {
@@ -163,16 +169,26 @@ Graph.prototype.addEdge = function(label, fromKey, toKey, data, order) {
 
   invariant(spec, 'addEdge(): Could not find edge spec for %s', label);
   invariant(
-    !this.getEdge(label, fromKey, toKey),
+    !this.getEdgeOrNull(label, fromKey, toKey),
     'addEdge(): Edge of label %s between %s and %s exists', label, fromKey, toKey
   );
   invariant(
-    !spec.inverseLabel || (!this.getEdge(spec.inverseLabel, toKey, fromKey)),
+    !spec.inverseLabel || (!this.getEdgeOrNull(spec.inverseLabel, toKey, fromKey)),
     'addEdge(): Inverse edge of label %s between %s and %s exists', spec.inverseLabel, toKey, fromKey
   );
 
+  // Type and existence checking via invariants
+  this.getNode(spec.fromType, fromKey);
+  this.getNode(spec.toType, toKey);
+
   this._insertEdge(new GraphEdge(label, fromKey, toKey, data, order));
   if (spec.inverseLabel) {
+    var inverseSpec = this.edgeSpecs[spec.inverseLabel];
+    invariant(inverseSpec, 'addEdge(): Could not find inverse edge spec for %s', spec.inverseLabel);
+
+    this.getNode(inverseSpec.fromType, toKey);
+    this.getNode(inverseSpec.toType, fromKey);
+
     this._insertEdge(new GraphEdge(spec.inverseLabel, toKey, fromKey, data, order));
   }
 };
@@ -193,7 +209,7 @@ Graph.prototype.addOrUpdateEdge = function(label, fromKey, toKey, data, order) {
 };
 
 Graph.prototype._insertEdge = function(edge) {
-  // All invariants are already checked.
+  // Invariants are already checked
 
   var edgesOfType = this.edges[edge.label];
   if (!edgesOfType) {
@@ -244,7 +260,7 @@ Graph.prototype.removeEdge = function(label, fromKey, toKey) {
   this._deleteEdge(label, fromKey, toKey);
 
   if (spec.inverseLabel) {
-    this._deleteEdge(spec.inverseLabel, toey, fromKey);
+    this._deleteEdge(spec.inverseLabel, toKey, fromKey);
   }
 };
 
